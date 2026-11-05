@@ -1,0 +1,7 @@
+{
+  "warning": "DEMO ONLY: these fixed keys are public sample data and must never be reused in a real deployment.",
+  "devices": [
+    { "device_id": "sensor-001", "key_hex": "d4e5a60c61aa9590df73bb50ab51e1d6c1b6ad0be24bc77af6af79a3165eeb27" },
+    { "device_id": "sensor-002", "key_hex": "f67e35d144b24df9098b9d6b7d2d3a1852d1516f5a2b88be4912d7b47f3daaf3" }
+  ]
+}

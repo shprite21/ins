@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IoT Device Authentication Demo</title>
+  <style>
+    :root { color-scheme: light; --ink:#17324d; --blue:#215b84; --mint:#d9f1e6; --line:#dbe4eb; --muted:#5b6d7c; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:#f3f6f8; color:#1e2933; font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif; }
+    main { max-width:760px; margin:54px auto; padding:0 20px; }
+    .card { background:#fff; border:1px solid var(--line); border-radius:18px; box-shadow:0 14px 36px #17324d12; overflow:hidden; }
+    header { padding:30px 34px 24px; background:linear-gradient(135deg,#17324d,#215b84); color:#fff; }
+    .eyebrow { margin:0 0 7px; font-size:12px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:#c5deef; }
+    h1 { margin:0; font-size:clamp(25px,5vw,36px); line-height:1.15; }
+    header p:last-child { max-width:600px; margin:12px 0 0; color:#e1edf5; }
+    .content { padding:28px 34px 32px; }
+    label { display:block; margin-bottom:8px; color:var(--ink); font-weight:700; }
+    select,button { min-height:46px; border-radius:9px; font:inherit; }
+    select { width:100%; padding:0 12px; border:1px solid #bac8d3; background:#fff; color:#1e2933; }
+    .actions { display:flex; flex-wrap:wrap; gap:10px; }
+    button { margin-top:16px; padding:0 18px; border:0; background:var(--blue); color:#fff; font-weight:700; cursor:pointer; }
+    button:hover { background:#174869; }
+    button.secondary { border:1px solid #9eb3c2; background:#fff; color:var(--ink); }
+    button.secondary:hover { background:#edf3f7; }
+    button:disabled { opacity:.6; cursor:wait; }
+    .result { min-height:58px; margin-top:20px; padding:15px 16px; border:1px solid var(--line); border-radius:10px; background:#f8fafb; color:var(--muted); white-space:pre-wrap; }
+    .result.ok { border-color:#a8d8c2; background:var(--mint); color:#15583e; }
+    .result.error { border-color:#efc1bc; background:#fff0ee; color:#8b2b22; }
+    .steps { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:20px; }
+    .step { padding:12px; border-radius:10px; background:#f3f6f8; color:var(--muted); font-size:13px; }
+    .step b { display:block; margin-bottom:3px; color:var(--ink); }
+    .note { margin:22px 0 0; color:var(--muted); font-size:13px; }
+    .trace { display:grid; gap:10px; margin-top:14px; }
+    .event { padding:13px 15px; border:1px solid var(--line); border-radius:10px; background:#fff; }
+    .event.pass { border-color:#a8d8c2; }
+    .event.fail { border-color:#efc1bc; }
+    .event h3 { margin:0 0 3px; font-size:15px; color:var(--ink); }
+    .event p { margin:0; color:var(--muted); font-size:13px; }
+    .event pre { overflow:auto; margin:9px 0 0; padding:10px; border-radius:7px; background:#f3f6f8; color:#243747; font:12px/1.45 ui-monospace,Consolas,monospace; white-space:pre-wrap; word-break:break-word; }
+    code { color:var(--ink); }
+    @media(max-width:560px) { main { margin:20px auto; } header,.content { padding-left:22px; padding-right:22px; } .steps { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="card" aria-labelledby="title">
+      <header>
+        <p class="eyebrow">BCS701 · Information and Network Security</p>
+        <h1 id="title">Secure Authentication for IoT Devices</h1>
+        <p>Run a local challenge-response demonstration. The device proves possession of a sample key without sending the key to the server.</p>
+      </header>
+      <div class="content">
+        <label for="device">Demo device</label>
+        <select id="device">
+          <option value="sensor-001">sensor-001</option>
+          <option value="sensor-002">sensor-002</option>
+        </select>
+        <div class="actions">
+          <button id="run">Run authentication</button>
+          <button id="walkthrough" class="secondary">Run security walkthrough</button>
+        </div>
+        <div id="result" class="result" role="status" aria-live="polite">Ready. Run authentication to see the exchange, or choose the walkthrough to attempt replay, tampering, and an unknown identity.</div>
+        <div id="trace" class="trace" aria-label="Protocol evidence"></div>
+        <div class="steps" aria-label="Authentication steps">
+          <div class="step"><b>1 · Challenge</b>Server creates a fresh one-time value.</div>
+          <div class="step"><b>2 · Proof</b>Device signs it with HMAC-SHA-256.</div>
+          <div class="step"><b>3 · Verify</b>Server checks the proof and consumes the session.</div>
+        </div>
+        <p class="note">Classroom demo only: the sample keys are public and embedded in this page. The walkthrough shows this server accepting and rejecting requests; it is not independent proof of production security. For a real deployment, use protected per-device keys, verified HTTPS, key lifecycle controls, and a security review.</p>
+      </div>
+    </section>
+  </main>
+  <script>
+    const demoKeys = {
+      "sensor-001": "d4e5a60c61aa9590df73bb50ab51e1d6c1b6ad0be24bc77af6af79a3165eeb27",
+      "sensor-002": "f67e35d144b24df9098b9d6b7d2d3a1852d1516f5a2b88be4912d7b47f3daaf3"
+    };
+    const result = document.getElementById("result");
+    const trace = document.getElementById("trace");
+    const buttons = [document.getElementById("run"), document.getElementById("walkthrough")];
+    const encoder = new TextEncoder();
+    const fromHex = value => new Uint8Array(value.match(/.{2}/g).map(byte => parseInt(byte, 16)));
+    const toHex = bytes => Array.from(new Uint8Array(bytes), byte => byte.toString(16).padStart(2, "0")).join("");
+
+    async function post(path, value) {
+      const response = await fetch(path, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(value)
+      });
+      const data = await response.json();
+      return { status: response.status, data };
+    }
+
+    function event(title, description, details, passed) {
+      const item = document.createElement("article");
+      item.className = `event ${passed ? "pass" : "fail"}`;
+      const heading = document.createElement("h3");
+      heading.textContent = `${passed ? "PASS" : "FAIL"} · ${title}`;
+      const summary = document.createElement("p");
+      summary.textContent = description;
+      const payload = document.createElement("pre");
+      payload.textContent = typeof details === "string" ? details : JSON.stringify(details, null, 2);
+      item.append(heading, summary, payload);
+      trace.append(item);
+    }
+
+    async function sign(deviceId, session) {
+      const encoded = session.challenge.replace(/-/g, "+").replace(/_/g, "/");
+      const challenge = Uint8Array.from(atob(encoded), char => char.charCodeAt(0));
+      const context = encoder.encode(`INS-IOT-AUTH-v1|${deviceId}|${session.session_id}|`);
+      const message = new Uint8Array(context.length + challenge.length);
+      message.set(context);
+      message.set(challenge, context.length);
+      const key = await crypto.subtle.importKey("raw", fromHex(demoKeys[deviceId]), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+      return toHex(await crypto.subtle.sign("HMAC", key, message));
+    }
+
+    function setBusy(busy) { buttons.forEach(button => button.disabled = busy); }
+    function startRun() { trace.replaceChildren(); result.className = "result"; }
+
+    document.getElementById("run").addEventListener("click", async () => {
+      const deviceId = document.getElementById("device").value;
+      setBusy(true); startRun();
+      result.className = "result";
+      result.textContent = "Requesting a fresh challenge…";
+      try {
+        const issued = await post("/challenge", { device_id: deviceId });
+        if (issued.status !== 200) throw new Error(JSON.stringify(issued.data));
+        event("Fresh challenge issued", `POST /challenge · HTTP ${issued.status}`, { device_id: deviceId, session_id: issued.data.session_id, challenge_base64url: issued.data.challenge, expires_in_seconds: issued.data.expires_in }, true);
+        const proof = await sign(deviceId, issued.data);
+        event("Device proof computed", "HMAC-SHA-256 over the protocol label, device ID, session ID, and challenge.", { algorithm: "HMAC-SHA-256", proof_hex: proof }, true);
+        const verified = await post("/authenticate", { device_id: deviceId, session_id: issued.data.session_id, proof });
+        event("Server verification", `POST /authenticate · HTTP ${verified.status}`, verified.data, verified.status === 200 && verified.data.authenticated === true);
+        if (verified.status !== 200) throw new Error(JSON.stringify(verified.data));
+        result.className = "result ok";
+        result.textContent = `Server accepted the proof for ${verified.data.device_id}. The transcript above shows the challenge, proof, and response.`;
+      } catch (error) {
+        result.className = "result error";
+        result.textContent = `Authentication failed: ${error.message}`;
+      } finally {
+        setBusy(false);
+      }
+    });
+
+    document.getElementById("walkthrough").addEventListener("click", async () => {
+      const deviceId = document.getElementById("device").value;
+      setBusy(true); startRun();
+      result.textContent = "Running valid authentication and three negative security checks…";
+      try {
+        const issued = await post("/challenge", { device_id: deviceId });
+        if (issued.status !== 200) throw new Error(`Challenge request failed: ${JSON.stringify(issued.data)}`);
+        event("Fresh challenge issued", `POST /challenge · HTTP ${issued.status}`, { device_id: deviceId, session_id: issued.data.session_id, challenge_base64url: issued.data.challenge, expires_in_seconds: issued.data.expires_in }, true);
+        const proof = await sign(deviceId, issued.data);
+        event("Device proof computed", "The browser signs the fresh session context using the public classroom key.", { algorithm: "HMAC-SHA-256", proof_hex: proof }, true);
+        const valid = await post("/authenticate", { device_id: deviceId, session_id: issued.data.session_id, proof });
+        const accepted = valid.status === 200 && valid.data.authenticated === true;
+        event("Valid authentication", `Expected HTTP 200 · received HTTP ${valid.status}`, valid.data, accepted);
+
+        const replay = await post("/authenticate", { device_id: deviceId, session_id: issued.data.session_id, proof });
+        const replayBlocked = replay.status === 401;
+        event("Replay attempt", `Expected HTTP 401 after the session was consumed · received HTTP ${replay.status}`, replay.data, replayBlocked);
+
+        const tamperSession = await post("/challenge", { device_id: deviceId });
+        let tamperedBlocked = false;
+        if (tamperSession.status === 200) {
+          const goodProof = await sign(deviceId, tamperSession.data);
+          const tamperedProof = (goodProof[0] === "0" ? "1" : "0") + goodProof.slice(1);
+          const tampered = await post("/authenticate", { device_id: deviceId, session_id: tamperSession.data.session_id, proof: tamperedProof });
+          tamperedBlocked = tampered.status === 401;
+          event("Tampered-proof attempt", `Changed one hex digit of the HMAC · expected HTTP 401 · received HTTP ${tampered.status}`, tampered.data, tamperedBlocked);
+        } else {
+          event("Tampered-proof attempt", `Could not obtain a fresh challenge · HTTP ${tamperSession.status}`, tamperSession.data, false);
+        }
+
+        const unknown = await post("/challenge", { device_id: "unregistered-device" });
+        const unknownBlocked = unknown.status === 401;
+        event("Unknown-device attempt", `Expected HTTP 401 · received HTTP ${unknown.status}`, unknown.data, unknownBlocked);
+
+        const allPassed = accepted && replayBlocked && tamperedBlocked && unknownBlocked;
+        result.className = `result ${allPassed ? "ok" : "error"}`;
+        result.textContent = allPassed
+          ? "Walkthrough passed: valid proof accepted; replay, tampered proof, and unregistered device rejected by this running server."
+          : "One or more checks did not match the expected response. Review the server results above.";
+      } catch (error) {
+        result.className = "result error";
+        result.textContent = `Walkthrough could not complete: ${error.message}`;
+      } finally {
+        setBusy(false);
+      }
+    });
+  </script>
+</body>
+</html>
