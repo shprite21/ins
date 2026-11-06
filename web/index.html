@@ -1,195 +1,487 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>IoT Device Authentication Demo</title>
-  <style>
-    :root { color-scheme: light; --ink:#17324d; --blue:#215b84; --mint:#d9f1e6; --line:#dbe4eb; --muted:#5b6d7c; }
-    * { box-sizing:border-box; }
-    body { margin:0; background:#f3f6f8; color:#1e2933; font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif; }
-    main { max-width:760px; margin:54px auto; padding:0 20px; }
-    .card { background:#fff; border:1px solid var(--line); border-radius:18px; box-shadow:0 14px 36px #17324d12; overflow:hidden; }
-    header { padding:30px 34px 24px; background:linear-gradient(135deg,#17324d,#215b84); color:#fff; }
-    .eyebrow { margin:0 0 7px; font-size:12px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:#c5deef; }
-    h1 { margin:0; font-size:clamp(25px,5vw,36px); line-height:1.15; }
-    header p:last-child { max-width:600px; margin:12px 0 0; color:#e1edf5; }
-    .content { padding:28px 34px 32px; }
-    label { display:block; margin-bottom:8px; color:var(--ink); font-weight:700; }
-    select,button { min-height:46px; border-radius:9px; font:inherit; }
-    select { width:100%; padding:0 12px; border:1px solid #bac8d3; background:#fff; color:#1e2933; }
-    .actions { display:flex; flex-wrap:wrap; gap:10px; }
-    button { margin-top:16px; padding:0 18px; border:0; background:var(--blue); color:#fff; font-weight:700; cursor:pointer; }
-    button:hover { background:#174869; }
-    button.secondary { border:1px solid #9eb3c2; background:#fff; color:var(--ink); }
-    button.secondary:hover { background:#edf3f7; }
-    button:disabled { opacity:.6; cursor:wait; }
-    .result { min-height:58px; margin-top:20px; padding:15px 16px; border:1px solid var(--line); border-radius:10px; background:#f8fafb; color:var(--muted); white-space:pre-wrap; }
-    .result.ok { border-color:#a8d8c2; background:var(--mint); color:#15583e; }
-    .result.error { border-color:#efc1bc; background:#fff0ee; color:#8b2b22; }
-    .steps { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:20px; }
-    .step { padding:12px; border-radius:10px; background:#f3f6f8; color:var(--muted); font-size:13px; }
-    .step b { display:block; margin-bottom:3px; color:var(--ink); }
-    .note { margin:22px 0 0; color:var(--muted); font-size:13px; }
-    .trace { display:grid; gap:10px; margin-top:14px; }
-    .event { padding:13px 15px; border:1px solid var(--line); border-radius:10px; background:#fff; }
-    .event.pass { border-color:#a8d8c2; }
-    .event.fail { border-color:#efc1bc; }
-    .event h3 { margin:0 0 3px; font-size:15px; color:var(--ink); }
-    .event p { margin:0; color:var(--muted); font-size:13px; }
-    .event pre { overflow:auto; margin:9px 0 0; padding:10px; border-radius:7px; background:#f3f6f8; color:#243747; font:12px/1.45 ui-monospace,Consolas,monospace; white-space:pre-wrap; word-break:break-word; }
-    code { color:var(--ink); }
-    @media(max-width:560px) { main { margin:20px auto; } header,.content { padding-left:22px; padding-right:22px; } .steps { grid-template-columns:1fr; } }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IoT Authentication | Protocol &amp; Security Lab</title>
+<style>
+:root{color-scheme:light;--ink:#142f42;--muted:#526778;--blue:#155e75;--line:#d6e2e8;--green:#176344;--red:#a03232}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:80px}body{margin:0;background:#eff4f6;color:var(--ink);font:15px/1.65 system-ui,-apple-system,"Segoe UI",sans-serif}a{color:var(--blue);text-underline-offset:3px}a:hover{text-decoration-thickness:2px}:focus-visible{outline:3px solid #b66613;outline-offset:4px}button,select{font:inherit}.wrap{width:min(1160px,100% - 48px);margin:auto}.skip{position:absolute;top:-70px;left:16px;background:white;padding:10px;z-index:9}.skip:focus{top:10px}
+.hero{padding:48px 0 38px;background:#142f42;color:white}.eyebrow{text-transform:uppercase;letter-spacing:.15em;font-size:11px;font-weight:750;color:#a9d8df;margin:0 0 12px}h1{margin:0;max-width:850px;font-size:clamp(29px,4.5vw,48px);line-height:1.15;letter-spacing:-.035em}.intro{max-width:760px;color:#d2e3eb;font-size:17px;margin:18px 0 22px}.pills{display:flex;gap:9px;flex-wrap:wrap}.pill{border:1px solid #557080;padding:4px 11px;border-radius:30px;font-size:12px}
+nav{position:sticky;top:0;z-index:3;background:white;border-bottom:1px solid var(--line)}nav .wrap{display:flex;gap:26px;overflow:auto}nav a{flex-shrink:0;padding:16px 0;font-size:13px;font-weight:700;text-decoration:none}main{padding:28px 0 60px}section{margin-bottom:28px}.panel{border:1px solid var(--line);border-radius:14px;background:white;padding:26px}.section-head{display:flex;justify-content:space-between;align-items:baseline;gap:16px;flex-wrap:wrap;margin-bottom:18px}h2{font-size:23px;letter-spacing:-.025em;margin:0;line-height:1.3}h3{font-size:16px;margin:0 0 8px}p{margin:0 0 12px}.muted,.small{color:var(--muted)}.small{font-size:13px}.ref{font-size:12px;color:var(--muted)}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.two{grid-template-columns:repeat(2,minmax(0,1fr))}.tile{padding:20px;border:1px solid var(--line);border-radius:11px;background:#f8fafb;min-width:0}.metric{display:block;font-size:25px;font-weight:750;letter-spacing:-.03em}.label{display:block;text-transform:uppercase;letter-spacing:.08em;font-size:10px;font-weight:750;color:var(--muted)}.notice{padding:14px 17px;border-left:3px solid #b88730;background:#fff7e8;border-radius:0 8px 8px 0;font-size:13px;margin:18px 0}
+label{display:block;font-weight:700;font-size:13px;margin-bottom:6px}select{min-height:44px;padding:8px 32px 8px 12px;color:var(--ink);border:1px solid #aebfca;border-radius:8px;background:white;width:min(100%,300px)}.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px}button{padding:10px 16px;border:1px solid var(--blue);border-radius:8px;background:var(--blue);color:white;cursor:pointer;font-size:13px;font-weight:700;min-height:44px}button:hover{background:#104b5d}button.secondary{background:white;color:var(--blue);border-color:#a8bdc8}button.secondary:hover{background:#edf5f7}button:disabled{opacity:.5;cursor:not-allowed}[hidden]{display:none!important}.result{padding:14px 16px;background:#f1f5f8;border:1px solid var(--line);border-radius:8px;margin-top:18px;font-size:14px;overflow-wrap:anywhere}.result.ok{background:#e8f5ee;color:var(--green);border-color:#a7d2bb}.result.error{background:#fff0ef;color:var(--red);border-color:#e4b4b0}
+.status{display:inline-block;padding:3px 9px;border-radius:20px;background:#edf1f4;color:var(--muted);font-size:11px;font-weight:750;white-space:nowrap}.status.pass{background:#e1f3e9;color:var(--green)}.status.fail{background:#fde5e3;color:var(--red)}.status.running,.status.manual{background:#fff0d1;color:#80550c}.test-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:20px}.test{padding:18px;border:1px solid var(--line);border-radius:10px}.test-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.test h3{font-size:14px}.test p{font-size:13px;color:var(--muted);margin-bottom:7px}.test small{display:block;color:var(--muted);font-size:11px}.table-wrap{overflow:auto;margin:16px 0}table{border-collapse:collapse;width:100%;text-align:left;font-size:13px}caption{text-align:left;font-weight:700;padding-bottom:10px}th{background:#f0f5f7;font-size:11px;letter-spacing:.04em;text-transform:uppercase}th,td{padding:12px;border-bottom:1px solid var(--line);vertical-align:top}td:first-child{font-weight:650}code,pre{font:12px/1.7 ui-monospace,Consolas,monospace}code{overflow-wrap:anywhere;background:#eff4f6;padding:2px 4px;border-radius:4px}pre{padding:16px;border:1px solid var(--line);background:#f5f8fa;border-radius:9px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;margin:12px 0}details{border:1px solid var(--line);border-radius:9px;padding:12px 16px;margin-top:12px}summary{font-weight:700;font-size:13px;cursor:pointer}details>p:first-of-type{margin-top:12px}.trace{max-height:600px;overflow:auto;padding:0 3px;margin-top:12px}.event{margin:10px 0;border-left:3px solid #a5bbc5;padding:12px 16px;background:#f8fafb;border-radius:0 8px 8px 0}.event.pass{border-color:var(--green)}.event.fail{border-color:var(--red)}.event h3{font-size:13px}.event p{font-size:12px;color:var(--muted)}.event pre{margin-bottom:0;background:white}ol,ul{padding-left:21px}li{margin-bottom:8px}.flow{display:flex;gap:12px;align-items:stretch;margin:18px 0}.flow>div{flex:1;padding:18px;background:#f1f6f8;border:1px solid var(--line);border-radius:9px;font-size:13px}.flow b{display:block;margin-bottom:5px}.flow>span{align-self:center;color:var(--blue);font-size:22px}footer{padding:22px 0;background:#e4edf1;color:var(--muted);font-size:12px}#countdown{font-variant-numeric:tabular-nums}
+@media(max-width:760px){.grid,.two{grid-template-columns:1fr}.wrap{width:calc(100% - 28px)}.panel{padding:20px}.hero{padding:32px 0}.flow{flex-direction:column}.flow>span{transform:rotate(90deg)}nav .wrap{gap:20px}}@media(max-width:520px){.test-grid{grid-template-columns:1fr}.actions button{width:100%}.test-top{flex-wrap:wrap}th,td{padding:9px}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}@media print{nav,.actions,.skip{display:none}.hero{background:white;color:black;padding:20px 0}.intro,.eyebrow{color:#333}.panel{break-inside:avoid}.wrap{width:100%}.trace{max-height:none;overflow:visible}}
+</style>
 </head>
 <body>
-  <main>
-    <section class="card" aria-labelledby="title">
-      <header>
-        <p class="eyebrow">BCS701 · Information and Network Security</p>
-        <h1 id="title">Secure Authentication for IoT Devices</h1>
-        <p>Run a local challenge-response demonstration. The device proves possession of a sample key without sending the key to the server.</p>
-      </header>
-      <div class="content">
-        <label for="device">Demo device</label>
-        <select id="device">
-          <option value="sensor-001">sensor-001</option>
-          <option value="sensor-002">sensor-002</option>
-        </select>
-        <div class="actions">
-          <button id="run">Run authentication</button>
-          <button id="walkthrough" class="secondary">Run security walkthrough</button>
-        </div>
-        <div id="result" class="result" role="status" aria-live="polite">Ready. Run authentication to see the exchange, or choose the walkthrough to attempt replay, tampering, and an unknown identity.</div>
-        <div id="trace" class="trace" aria-label="Protocol evidence"></div>
-        <div class="steps" aria-label="Authentication steps">
-          <div class="step"><b>1 · Challenge</b>Server creates a fresh one-time value.</div>
-          <div class="step"><b>2 · Proof</b>Device signs it with HMAC-SHA-256.</div>
-          <div class="step"><b>3 · Verify</b>Server checks the proof and consumes the session.</div>
-        </div>
-        <p class="note">Classroom demo only: the sample keys are public and embedded in this page. The walkthrough shows this server accepting and rejecting requests; it is not independent proof of production security. For a real deployment, use protected per-device keys, verified HTTPS, key lifecycle controls, and a security review.</p>
-      </div>
-    </section>
-  </main>
-  <script>
-    const demoKeys = {
-      "sensor-001": "d4e5a60c61aa9590df73bb50ab51e1d6c1b6ad0be24bc77af6af79a3165eeb27",
-      "sensor-002": "f67e35d144b24df9098b9d6b7d2d3a1852d1516f5a2b88be4912d7b47f3daaf3"
-    };
-    const result = document.getElementById("result");
-    const trace = document.getElementById("trace");
-    const buttons = [document.getElementById("run"), document.getElementById("walkthrough")];
-    const encoder = new TextEncoder();
-    const fromHex = value => new Uint8Array(value.match(/.{2}/g).map(byte => parseInt(byte, 16)));
-    const toHex = bytes => Array.from(new Uint8Array(bytes), byte => byte.toString(16).padStart(2, "0")).join("");
+<a class="skip" href="#main">Skip to dashboard</a>
+<header class="hero">
+<div class="wrap">
+<p class="eyebrow">BCS701 / Information and Network Security / CCA 2025-26</p>
+<h1>Secure Authentication<br>for IoT Devices</h1>
+<p class="intro">Follow a device identity from fresh challenge to verified proof. Explore the protocol, run the report's test cases, and explain the security boundaries.</p>
+<div class="pills">
+<span class="pill">HMAC-SHA-256</span>
+<span class="pill">256-bit challenge</span>
+<span class="pill">60-second validity</span>
+<span class="pill">Educational prototype</span>
+</div>
+</div>
+</header>
+<nav aria-label="Dashboard sections">
+<div class="wrap">
+<a href="#overview">Overview</a>
+<a href="#lab">Protocol lab</a>
+<a href="#tests">Report tests</a>
+<a href="#design">Design</a>
+<a href="#security">Security</a>
+<a href="#setup">Setup &amp; TLS</a>
+<a href="#coverage">Report map</a>
+</div>
+</nav>
+<main class="wrap" id="main">
+<section id="overview" aria-labelledby="overview-title">
+<div class="section-head">
+<h2 id="overview-title">Identity before telemetry</h2>
+<span class="ref">Report §§1-4, 8-9 · pp.4-5, 8-9</span>
+</div>
+<p class="muted">A copied static credential can be replayed. Here, a registered device computes a keyed proof bound to its identity and a fresh server session. The gateway checks that proof before establishing device identity.</p>
+<div class="grid">
+<div class="tile">
+<span class="label">Server connection</span>
+<strong class="metric" id="connection">Checking...</strong>
+<span class="small" id="transport-summary">Reading public server metadata.</span>
+</div>
+<div class="tile">
+<span class="label">Automated report cases passed</span>
+<strong class="metric" id="test-count">0 / 6</strong>
+<span class="small">ST-1-6 in this page session. ST-7 requires a separate certificate-validation check.</span>
+</div>
+<div class="tile">
+<span class="label">Deployment boundary</span>
+<strong class="metric">Local classroom</strong>
+<span class="small">Public sample keys, process-local state, optional TLS. No production-security claim.</span>
+</div>
+</div>
+<div class="notice">
+<strong>Public fixtures:</strong> the two sample keys are embedded in this page for reproducibility. Authentication requests carry a proof rather than a key, but the HTML itself contains the public keys. This demonstrates a protocol, not confidential provisioning or protected key storage.</div>
+</section>
 
-    async function post(path, value) {
-      const response = await fetch(path, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(value)
-      });
-      const data = await response.json();
-      return { status: response.status, data };
+<section class="panel" id="lab" aria-labelledby="lab-title">
+<div class="section-head">
+<h2 id="lab-title">Protocol lab</h2>
+<span class="ref">FR-1-3 · Report §5, p.6</span>
+</div>
+<p class="muted">Select a classroom device and inspect the actual request, challenge, HMAC input, proof, and server response. The browser acts as a device simulator using Web Crypto; the Python verifier uses the standard library.</p>
+<label for="device">Demo device identity</label>
+<select id="device">
+<option value="sensor-001">sensor-001</option>
+<option value="sensor-002">sensor-002</option>
+</select>
+<p class="small" id="registry-note">Demo identities are checked against the running server before controls are enabled.</p>
+<div class="actions">
+<button id="run" data-run disabled>Run authentication</button>
+<button id="walkthrough" data-run disabled>Run security walkthrough</button>
+<button id="export" class="secondary" disabled>Download evidence</button>
+<button id="clear" class="secondary" data-run disabled>Clear evidence</button>
+</div>
+<div id="result" class="result" role="status" aria-live="polite">Connecting to the local authentication service...</div>
+<details open id="evidence">
+<summary>Protocol evidence <span id="event-count">(0 records)</span>
+</summary>
+<p class="small">Actual requests and responses from this server. Records stay in memory until cleared or reloaded. A PASS records expected scenario behavior; it does not prove the security of the cryptographic primitive.</p>
+<div id="trace" class="trace" aria-label="Protocol evidence">
+</div>
+</details>
+</section>
+
+<section class="panel" id="tests" aria-labelledby="tests-title">
+<div class="section-head">
+<h2 id="tests-title">The report's seven test cases</h2>
+<span class="ref">Report §7, p.8</span>
+</div>
+<p class="muted">The quick walkthrough runs ST-1-4 and ST-6 using <code>sensor-001</code>, as specified in the report. It also probes freshness and device, session, and challenge binding. Run expiry separately; certificate validation has its own procedure below.</p>
+<div class="actions">
+<button id="expiry" class="secondary" data-run disabled>Run ST-5 expiry test (~62 seconds)</button>
+<button id="cancel" class="secondary" hidden>Cancel expiry test</button>
+</div>
+<p id="countdown" class="small" aria-live="off">
+</p>
+<div class="test-grid">
+<article class="test">
+<div class="test-top">
+<h3>ST-1 · Valid device</h3>
+<span class="status" id="status-st1">Not run</span>
+</div>
+<p>Authenticate sensor-001 with its demo key. Expect HTTP 200 and <code>authenticated: true</code>.</p>
+<small id="detail-st1">Run the security walkthrough.</small>
+</article>
+<article class="test">
+<div class="test-top">
+<h3>ST-2 · Unknown identity</h3>
+<span class="status" id="status-st2">Not run</span>
+</div>
+<p>Request a challenge for an unregistered ID. Expect HTTP 401 and no challenge.</p>
+<small id="detail-st2">Run the security walkthrough.</small>
+</article>
+<article class="test">
+<div class="test-top">
+<h3>ST-3 · Tamper and consume</h3>
+<span class="status" id="status-st3">Not run</span>
+</div>
+<p>Change one proof digit, expect HTTP 401, then retry the original valid proof. It must also receive HTTP 401 because the failed session was consumed.</p>
+<small id="detail-st3">Run the security walkthrough.</small>
+</article>
+<article class="test">
+<div class="test-top">
+<h3>ST-4 · Replay</h3>
+<span class="status" id="status-st4">Not run</span>
+</div>
+<p>Resubmit an accepted session and proof. Expect HTTP 401.</p>
+<small id="detail-st4">Run the security walkthrough.</small>
+</article>
+<article class="test">
+<div class="test-top">
+<h3>ST-5 · Expired session</h3>
+<span class="status" id="status-st5">Not run</span>
+</div>
+<p>Compute a valid proof, wait beyond the real 60-second TTL, then submit it. Expect HTTP 401. Server time and TTL are unchanged.</p>
+<small id="detail-st5">Use the separate expiry button. Cancelling leaves the test incomplete.</small>
+</article>
+<article class="test">
+<div class="test-top">
+<h3>ST-6 · Malformed requests</h3>
+<span class="status" id="status-st6">Not run</span>
+</div>
+<p>Send missing fields, invalid field types, and malformed JSON to both endpoints. Expect HTTP 400 and a generic request error.</p>
+<small id="detail-st6">Run the security walkthrough.</small>
+</article>
+<article class="test">
+<div class="test-top">
+<h3>ST-7 · Trusted TLS</h3>
+<span class="status manual" id="status-st7">Manual check</span>
+</div>
+<p>Authenticate with a trusted certificate and confirm rejection with an unrelated CA. An HTTPS connection alone cannot establish both results.</p>
+<small id="detail-st7">No certificate-validation result has been recorded here.</small>
+<a class="small" href="#tls">Open the ST-7 procedure</a>
+</article>
+</div>
+<p class="small" style="margin-top:16px">The report defines expected results and claims no measured execution. These badges describe only tests actually run here. Performance and memory benchmarking, certification, and formal verification remain outside scope.</p>
+</section>
+
+<section class="panel" id="design" aria-labelledby="design-title">
+<div class="section-head">
+<h2 id="design-title">How the system works</h2>
+<span class="ref">Report §§4-5 · pp.5-6</span>
+</div>
+<div class="flow" aria-label="Device simulator exchanges JSON over HTTP or HTTPS with the server, which holds the registry and pending sessions">
+<div>
+<b>Device simulator</b>Browser client or <code>device.py</code>. Holds the matching sample key and computes an HMAC.</div>
+<span aria-hidden="true">↔</span>
+<div>
+<b>HTTP(S) JSON interface</b>
+<code>POST /challenge</code>
+<br>
+<code>POST /authenticate</code>
+<br>Keys omitted from authentication POSTs.</div>
+<span aria-hidden="true">↔</span>
+<div>
+<b>Authentication server</b>
+<code>server.py</code> reads the JSON registry and holds pending sessions in process-local memory.</div>
+</div>
+<ol>
+<li>
+<strong>Identify:</strong> the device requests a challenge with its registered <code>device_id</code>. Unknown IDs are refused.</li>
+<li>
+<strong>Challenge:</strong> <code>secrets.token_bytes(32)</code> generates 32 random bytes (256 bits); <code>secrets.token_urlsafe(18)</code> generates the session ID. Both are bound to a device ID and a monotonic expiry time.</li>
+<li>
+<strong>Compute:</strong> the device uses its assigned symmetric key to compute HMAC-SHA-256 over the complete session context.</li>
+<li>
+<strong>Submit:</strong> send <code>device_id</code>, <code>session_id</code>, and the 64-character hexadecimal <code>proof</code> to <code>/authenticate</code>.</li>
+<li>
+<strong>Consume and verify:</strong> a lock protects <code>challenges.pop(session_id, None)</code>. For a well-formed authentication attempt, removal happens before identity, expiry, and proof checks. The server recomputes the HMAC and uses <code>hmac.compare_digest</code> on the fixed-length hex proofs.</li>
+</ol>
+<h3>The exact authenticated message</h3>
+<pre>message = b"INS-IOT-AUTH-v1" + b"|" + device_id.encode("utf-8")
+          + b"|" + session_id.encode("ascii") + b"|" + challenge_bytes
+proof   = HMAC-SHA-256(device_key, message).hex()</pre>
+<p class="small">The fixed domain label separates this use of a key from other protocols. The challenge is decoded from Base64URL into raw bytes before HMAC computation; the encoded challenge text is not the input. HMAC is a symmetric message authentication code, neither encryption nor a public-key digital signature.</p>
+<details>
+<summary>Why these choices matter</summary>
+<p>A server-selected challenge avoids a reusable static response. Device and session IDs bind the proof to a particular claimant and exchange. Atomic consumption permits at most one verification attempt per session, even for an invalid proof. Expiry bounds how long an unused challenge can authenticate.</p>
+<p class="small">Constant-time comparison is a source-level implementation property; browser round-trip timings cannot prove it. Malformed requests rejected with HTTP 400 before verification do not consume a session. Expired sessions become unusable; this prototype does not proactively purge abandoned records from memory.</p>
+</details>
+</section>
+
+<section class="panel" id="security" aria-labelledby="security-title">
+<div class="section-head">
+<h2 id="security-title">Security properties and their limits</h2>
+<span class="ref">Report §§3, 6 · pp.5, 7</span>
+</div>
+<p class="muted">Threat model: an attacker may observe, modify, delay, or replay messages. The design assumes strong private per-device keys that cannot be extracted from devices or the server. Public classroom fixtures do not satisfy that assumption.</p>
+<div class="table-wrap">
+<table>
+<caption>What each property establishes</caption>
+<thead>
+<tr>
+<th scope="col">Property / threat</th>
+<th scope="col">Mechanism and evidence</th>
+<th scope="col">Boundary</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Device authentication / impersonation</td>
+<td>Registered ID and keyed proof; ST-1, ST-2, device-binding probe.</td>
+<td>A copied key enables impersonation. Authentication does not authorize individual commands.</td>
+</tr>
+<tr>
+<td>Proof integrity / tampering</td>
+<td>HMAC covers label, ID, session, and challenge; ST-3 and context probes.</td>
+<td>No encryption of readings or metadata; no telemetry or command endpoint is implemented.</td>
+</tr>
+<tr>
+<td>Freshness / delayed requests</td>
+<td>Secure random challenge and 60-second TTL; freshness probe and ST-5.</td>
+<td>Different observed values do not prove unpredictability. Random generation relies on Python's secrets module.</td>
+</tr>
+<tr>
+<td>Replay resistance</td>
+<td>Atomic removal before proof checking; ST-3 and ST-4.</td>
+<td>Restart invalidates pending sessions. Multiple processes do not share state; clustered operation needs shared atomic state.</td>
+</tr>
+<tr>
+<td>Transport confidentiality / eavesdropping</td>
+<td>Optional Python TLS socket; transport observation and ST-7 procedure.</td>
+<td>HMAC supplies no channel confidentiality. HTTP stays on localhost; deployment needs verified TLS.</td>
+</tr>
+<tr>
+<td>Input handling</td>
+<td>Type, length, and JSON shape checks with 400/401 responses; ST-6.</td>
+<td>Generic rejection does not supply rate limiting, denial-of-service resistance, or a production audit.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="grid two">
+<div class="tile">
+<h3>Key management and operation</h3>
+<p class="small">The registry is unencrypted JSON with distinct, public demo keys. Real devices need unique high-entropy keys, authenticated provisioning, secure elements or equivalent storage, revocation, replacement, rotation, audit procedures, and secure backups.</p>
+<p class="small">Production also needs request limits, monitoring, authorization, and durable atomic replay state. Console request logs are not an audited monitoring system. HMAC alone does not provide these controls.</p>
+</div>
+<div class="tile">
+<h3>Applications and future work</h3>
+<p class="small">Relevant to smart-home sensors, environmental monitoring, industrial telemetry, and classroom gateway testbeds. This is simulated identity establishment, not a physical IoT deployment.</p>
+<p class="small">
+<strong>Future work, not implemented:</strong> mutual authentication, certificate-based device identity, secure enrollment, command authorization, protected hardware keys, rotation, revocation lists, clustered replay state, and MQTT over verified TLS. There is no production database or certificate issuance service.</p>
+</div>
+</div>
+</section>
+
+<section class="panel" id="setup" aria-labelledby="setup-title">
+<div class="section-head">
+<h2 id="setup-title">Run it and explain it</h2>
+<span class="ref">Report §§4-5, 7 · pp.5-6, 8</span>
+</div>
+<div class="grid two">
+<div>
+<h3>Requirements and project structure</h3>
+<p class="small">A computer with Python 3.10+ and a modern browser. Server and CLI simulator use only Python's standard library. The browser uses built-in Web Crypto on HTTPS or trustworthy loopback origins. Git is optional when you already have the files.</p>
+<pre>iot-auth-project/
+  server.py              challenge service and verifier
+  device.py              command-line device simulator
+  data/demo_devices.json public classroom registry
+  web/index.html         dashboard and browser simulator
+  verify_tls.py          ST-7 validating CLI check
+  README.md              setup and limitations
+  report/                CCA PDF, source, and emblem
+  tests/                 regression checks</pre>
+<p class="small">A real target additionally needs networking, sound cryptographic facilities, and protected persistent storage for a unique device key.</p>
+</div>
+<div>
+<h3>Local classroom demonstration</h3>
+<p class="small">From the project folder:</p>
+<pre>python server.py</pre>
+<p class="small">Open <a href="http://127.0.0.1:8080/">http://127.0.0.1:8080/</a>. In another terminal:</p>
+<pre>python device.py sensor-001
+python device.py sensor-002</pre>
+<p class="small">Expect <code>"authenticated": true</code>. Unknown identities are refused; the CLI refuses to proceed without a local key. Server defaults to <code>127.0.0.1:8080</code>. Keep the HTTP demo local.</p>
+</div>
+</div>
+<details open id="tls">
+<summary>ST-7 · Configure TLS and validate certificates</summary>
+<p id="tls-observation" class="small">Transport has not been checked yet.</p>
+<ol class="small">
+<li>Provide a trusted local certificate <code>cert.pem</code> and matching private key <code>key.pem</code>. Its Subject Alternative Name must match the hostname or IP used by the client. Do not commit private keys.</li>
+<li>Start a TLS listener:<pre>python server.py --host 127.0.0.1 --port 8443 --tls-cert cert.pem --tls-key key.pem</pre>
+</li>
+<li>Open <a href="https://127.0.0.1:8443/">https://127.0.0.1:8443/</a> in a client that trusts the issuing CA. Inspect the certificate and authenticate. Do not bypass certificate warnings.</li>
+<li>For a repeatable CLI check, use the issuing CA and a separate unrelated CA file. The verifier checks hostname, expiry, trust, and successful authentication, then confirms rejection with the unrelated CA. Trust is restricted to the test client; OS trust is unchanged.<pre>python verify_tls.py --server https://127.0.0.1:8443 --ca-file local-ca.pem --untrusted-ca-file unrelated-ca.pem --output tls-evidence.json</pre>
+</li>
+<li>ST-7 is complete only when both trusted authentication and untrusted-certificate rejection pass. Keep the verifier's JSON output with your downloaded dashboard evidence. This page never infers a PASS from the URL.</li>
+</ol>
+<p class="small">TLS support does not guarantee a particular negotiated version. Server metadata shows the version negotiated for that request. Certificate issuance, trust distribution, and mutual TLS remain outside this prototype.</p>
+<label for="tls-evidence">Import the verifier's JSON result to record ST-7</label>
+<input type="file" id="tls-evidence" accept="application/json,.json">
+<p class="small" id="tls-import-note">Imported evidence is labelled as an external CLI observation, not a browser-generated test or independent attestation.</p>
+</details>
+</section>
+
+<section class="panel" id="coverage" aria-labelledby="coverage-title">
+<div class="section-head">
+<h2 id="coverage-title">Report-to-dashboard map</h2>
+<a href="/report" target="_blank" rel="noopener">Open the CCA report PDF</a>
+</div>
+<p class="small">The academic cover, evaluation sheet, and contents are available in the PDF. All technical sections are mapped below. Explanations describe implementation; results are recorded only when executed.</p>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th scope="col">Report coverage</th>
+<th scope="col">Where to explain or demonstrate it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>§§1-3 · Introduction, abstract, problem, objectives, assumptions</td>
+<td>
+<a href="#overview">Identity before telemetry</a>, <a href="#design">protocol design</a>, and <a href="#security">threat model</a>.</td>
+</tr>
+<tr>
+<td>§4 · FR-1 registered identities</td>
+<td>Device selector, live registry IDs, ST-1 and ST-2. Registration is a supplied fixture, not an enrollment UI.</td>
+</tr>
+<tr>
+<td>§4 · FR-2 challenge and session / FR-3 HMAC</td>
+<td>Protocol evidence, exact input bytes, secure generation explanation, freshness and context-binding probes.</td>
+</tr>
+<tr>
+<td>§4 · FR-4 input rejection / FR-5 expiry and consumption</td>
+<td>ST-2-6, including a valid retry after a failed proof and a real TTL wait.</td>
+</tr>
+<tr>
+<td>§4 · FR-6 encrypted transport</td>
+<td>Live transport observation, ST-7 procedure, and validating CLI verifier.</td>
+</tr>
+<tr>
+<td>§4 · Non-functional, hardware and software requirements</td>
+<td>Standard-library implementation, constant-time comparison explanation, clear outcomes, public-fixture boundary, local defaults, and setup.</td>
+</tr>
+<tr>
+<td>§5 · Architecture, message, project structure and execution</td>
+<td>
+<a href="#design">How the system works</a>, evidence, and <a href="#setup">Run it and explain it</a>.</td>
+</tr>
+<tr>
+<td>§6 · Security objectives, threats and limitations</td>
+<td>
+<a href="#security">Security properties</a>, key lifecycle, restart and clustering boundaries.</td>
+</tr>
+<tr>
+<td>§7 · ST-1-7 and evaluation measures</td>
+<td>Seven test cards, actual automated observations and separate TLS evidence. No performance or formal-security claim.</td>
+</tr>
+<tr>
+<td>§§8-9 · Innovation, applications, future work, conclusion</td>
+<td>One-time context-bound proof, visible replay handling, application examples, and explicitly unimplemented extensions.</td>
+</tr>
+<tr>
+<td>§10 · References</td>
+<td>The report's source links below.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<details>
+<summary>References from the report</summary>
+<ol class="small">
+<li>NIST, <a href="https://csrc.nist.gov/pubs/ir/8259/r1/final" target="_blank" rel="noopener">Foundational Cybersecurity Activities for IoT Product Manufacturers, NISTIR 8259 Rev.1</a> (2026).</li>
+<li>Krawczyk, Bellare, Canetti, <a href="https://www.rfc-editor.org/rfc/rfc2104" target="_blank" rel="noopener">HMAC: Keyed-Hashing for Message Authentication, RFC 2104</a> (1997).</li>
+<li>Rescorla, <a href="https://www.rfc-editor.org/rfc/rfc8446" target="_blank" rel="noopener">The Transport Layer Security (TLS) Protocol Version 1.3, RFC 8446</a> (2018).</li>
+<li>NIST, <a href="https://csrc.nist.gov/pubs/sp/800/63/B/4/final" target="_blank" rel="noopener">Digital Identity Guidelines: Authentication and Authenticator Management, SP 800-63B-4</a> (2025).</li>
+</ol>
+<p class="small">Reference entries are reproduced from the report for further reading. Listing a standard is not a claim of certification or compliance.</p>
+</details>
+</section>
+</main>
+<footer>
+<div class="wrap">BMS Institute of Technology and Management · Information Science and Engineering · Guided by Dr. Swetha M S · Educational challenge-response prototype</div>
+</footer>
+<script>
+"use strict";
+const demoKeys={"sensor-001":"d4e5a60c61aa9590df73bb50ab51e1d6c1b6ad0be24bc77af6af79a3165eeb27","sensor-002":"f67e35d144b24df9098b9d6b7d2d3a1852d1516f5a2b88be4912d7b47f3daaf3"};
+const $=id=>document.getElementById(id),encoder=new TextEncoder();
+const toHex=bytes=>Array.from(new Uint8Array(bytes),b=>b.toString(16).padStart(2,"0")).join("");
+const fromHex=hex=>new Uint8Array(hex.match(/.{2}/g).map(b=>parseInt(b,16)));
+const decodeChallenge=value=>Uint8Array.from(atob(value.replace(/-/g,"+").replace(/_/g,"/")),c=>c.charCodeAt(0));
+const testIds=["st1","st2","st3","st4","st5","st6"];
+const tests=Object.fromEntries(testIds.map(id=>[id,{status:"not-run",detail:"Not run"}]));
+tests.st7={status:"manual",detail:"Separate trusted and untrusted certificate checks required."};
+let records=[],serverInfo=null,available=false,busy=false,expiryController=null,runId=null;
+function message(text,style=""){ $("result").textContent=text; $("result").className=`result ${style}`; }
+function setBusy(value){busy=value;document.querySelectorAll("[data-run]").forEach(b=>b.disabled=value||!available);$("device").disabled=value||!available;$("tls-evidence").disabled=value;}
+function begin(label){runId=`${label}-${new Date().toISOString()}`;setBusy(true);}
+function updateTest(id,status,detail){const at=new Date().toISOString();tests[id]={status,detail,recorded_at:at,run_id:runId};$("status-"+id).className=`status ${status}`;$("status-"+id).textContent=({pass:"PASS",fail:"FAIL",running:"Running","not-run":"Not run",incomplete:"Incomplete",external:"External PASS",manual:"Manual check"})[status]||status;$("detail-"+id).textContent=`${detail} (${new Date(at).toLocaleTimeString()})`;$("test-count").textContent=`${testIds.filter(key=>tests[key].status==="pass").length} / 6`;$("export").disabled=false;}
+function event(title,description,details,passed=null){records.push({run_id:runId,recorded_at:new Date().toISOString(),title,description,passed,...details});const item=document.createElement("article");item.className=`event ${passed===true?"pass":passed===false?"fail":""}`;const h=document.createElement("h3");h.textContent=`${passed===true?"PASS · ":passed===false?"FAIL · ":""}${title}`;const p=document.createElement("p");p.textContent=description;const pre=document.createElement("pre");pre.textContent=JSON.stringify(details,null,2);item.append(h,p,pre);$("trace").append(item);$("event-count").textContent=`(${records.length} records)`;$("export").disabled=false;}
+async function post(path,value,raw=false){const response=await fetch(path,{method:"POST",headers:{"Content-Type":"application/json"},body:raw?value:JSON.stringify(value),signal:AbortSignal.timeout(10000)});return{request:{method:"POST",path,body:value},response:{status:response.status,body:await response.json()}};}
+const rejected=v=>v.response.status===401&&v.response.body.authenticated===false&&v.response.body.error==="authentication_failed";
+const accepted=v=>v.response.status===200&&v.response.body.authenticated===true;
+async function issue(id,title="Fresh challenge issued"){const v=await post("/challenge",{device_id:id}),s=v.response.body;const ok=v.response.status===200&&typeof s.session_id==="string"&&s.session_id.length>0&&typeof s.challenge==="string"&&decodeChallenge(s.challenge).length===32&&s.expires_in===60;event(title,"Server-selected 32-byte challenge, one-time session, and 60-second validity.",v,ok);if(!ok)throw new Error("Challenge response does not match the report's protocol.");return s;}
+async function proofFor(id,s,show=false){const challenge=decodeChallenge(s.challenge),prefix=encoder.encode(`INS-IOT-AUTH-v1|${id}|${s.session_id}|`),input=new Uint8Array(prefix.length+challenge.length);input.set(prefix);input.set(challenge,prefix.length);const key=await crypto.subtle.importKey("raw",fromHex(demoKeys[id]),{name:"HMAC",hash:"SHA-256"},false,["sign"]),proof=toHex(await crypto.subtle.sign("HMAC",key,input));if(show)event("Device computes HMAC","Input ends with raw challenge bytes. No key field is sent in the authentication POST.",{algorithm:"HMAC-SHA-256",domain_label:"INS-IOT-AUTH-v1",device_id:id,session_id:s.session_id,challenge_bytes:challenge.length,input_hex:toHex(input),proof_hex:proof});return proof;}
+const auth=(id,s,proof)=>post("/authenticate",{device_id:id,session_id:s.session_id,proof});
+async function check(id,action){updateTest(id,"running","Executing requests against this server.");try{const ok=await action();updateTest(id,ok?"pass":"fail",ok?"All expected responses observed; see evidence.":"Unexpected response; inspect evidence.");}catch(e){updateTest(id,"fail",e.message);event(id.toUpperCase()+" incomplete",e.message,{error:e.message},false);}}
+$("run").addEventListener("click",async()=>{if(busy||!available)return;begin("authentication");message("Requesting a fresh challenge...");try{const id=$("device").value,s=await issue(id),proof=await proofFor(id,s,true),v=await auth(id,s,proof),ok=accepted(v)&&v.response.body.device_id===id;event("Server verification",`Expected HTTP 200 and authenticated=true for ${id}.`,v,ok);message(ok?`Authenticated ${id}. Inspect the recorded request and proof below.`:"Authentication did not match the expected result.",ok?"ok":"error");}catch(e){message(`Authentication could not complete: ${e.message}`,"error");}finally{setBusy(false);}});
+$("walkthrough").addEventListener("click",async()=>{
+ if(busy||!available)return;begin("quick-suite");message("Running ST-1-4, ST-6, freshness, and context-binding probes...");const ids=["st1","st2","st3","st4","st6"];ids.forEach(id=>updateTest(id,"not-run","Queued for this walkthrough."));let s,proof,valid=false;
+ try{
+  await check("st1",async()=>{s=await issue("sensor-001");proof=await proofFor("sensor-001",s,true);const v=await auth("sensor-001",s,proof);valid=accepted(v)&&v.response.body.device_id==="sensor-001";event("ST-1 · Valid authentication","Expected HTTP 200 and authenticated=true for sensor-001.",v,valid);return valid;});
+  await check("st2",async()=>{const v=await post("/challenge",{device_id:"unregistered-device"}),ok=v.response.status===401&&v.response.body.error==="device_not_registered"&&!("challenge" in v.response.body);event("ST-2 · Unknown identity","Expected HTTP 401 and no issued challenge.",v,ok);return ok;});
+  await check("st3",async()=>{const t=await issue("sensor-001","ST-3 · New tamper session"),good=await proofFor("sensor-001",t),bad=(good[0]==="0"?"1":"0")+good.slice(1),v=await auth("sensor-001",t,bad);event("ST-3 · Changed proof digit","Expected HTTP 401.",v,rejected(v));const retry=await auth("sensor-001",t,good);event("ST-3 · Retry original valid proof","Expected HTTP 401: the failed attempt consumed the session.",retry,rejected(retry));return rejected(v)&&rejected(retry);});
+  await check("st4",async()=>{if(!valid)throw new Error("Replay prerequisite failed: ST-1 did not authenticate.");const v=await auth("sensor-001",s,proof);event("ST-4 · Replay accepted proof","Expected HTTP 401 for the consumed session.",v,rejected(v));return rejected(v);});
+  await check("st6",async()=>{let ok=true;const cases=[["/challenge",{},false],["/authenticate",{},false],["/challenge",{device_id:42},false],["/authenticate",{device_id:"sensor-001",session_id:42,proof:"00"},false],["/challenge",'{"device_id":',true],["/authenticate","{invalid-json",true]];for(const[path,body,raw]of cases){const v=await post(path,body,raw),pass=v.response.status===400&&["invalid_json","invalid_device_id","invalid_request"].includes(v.response.body.error);event("ST-6 · Invalid request","Expected HTTP 400 with a generic request error.",v,pass);ok=pass&&ok;}return ok;});
+  let probes=true;try{const a=await issue("sensor-001","Freshness · First issuance"),b=await issue("sensor-001","Freshness · Second issuance"),fresh=a.session_id!==b.session_id&&a.challenge!==b.challenge;event("Freshness observation","Two distinct challenges and sessions; not a statistical randomness test.",{first:a,second:b},fresh);probes=fresh&&probes;const device=await auth("sensor-002",a,await proofFor("sensor-002",a));event("Device-binding probe","sensor-002's key cannot use sensor-001's session.",device,rejected(device));probes=rejected(device)&&probes;const changedSession={...b,session_id:b.session_id+"-changed"},session=await auth("sensor-001",changedSession,await proofFor("sensor-001",b));event("Session-binding probe","An altered session ID does not authenticate the original proof.",session,rejected(session));probes=rejected(session)&&probes;const bytes=decodeChallenge(b.challenge);bytes[0]^=1;const altered={...b,challenge:btoa(String.fromCharCode(...bytes))},challenge=await auth("sensor-001",b,await proofFor("sensor-001",altered));event("Challenge-binding probe","A proof computed over altered bytes fails against the stored challenge.",challenge,rejected(challenge));probes=rejected(challenge)&&probes;}catch(e){probes=false;event("Context probes incomplete",e.message,{error:e.message},false);}
+  const ok=ids.every(id=>tests[id].status==="pass")&&probes;message(ok?"Quick walkthrough passed: ST-1-4, ST-6, freshness, and context-binding probes. ST-5 expiry and ST-7 certificate validation are separate; see their cards.":"Some checks failed or could not complete. Inspect the cards and evidence.",ok?"ok":"error");
+ }finally{setBusy(false);}
+});
+function waitForExpiry(deadline,signal){return new Promise((resolve,reject)=>{let timer;function cleanup(){clearTimeout(timer);signal.removeEventListener("abort",cancelled);}function cancelled(){cleanup();reject(new DOMException("Expiry test cancelled","AbortError"));}function tick(){const remaining=deadline-performance.now();$("countdown").textContent=`Waiting beyond the real server expiry: ${Math.max(0,Math.ceil(remaining/1000))} seconds remaining. You can continue reading.`;if(remaining<=0){cleanup();resolve();}else timer=setTimeout(tick,Math.min(1000,remaining));}signal.addEventListener("abort",cancelled,{once:true});if(signal.aborted)cancelled();else tick();});}
+$("expiry").addEventListener("click",async()=>{if(busy||!available)return;begin("expiry");expiryController=new AbortController();$("cancel").hidden=false;updateTest("st5","running","Obtaining a proof, then waiting past the real TTL.");message("ST-5 is running with the actual 60-second server expiry.");try{const s=await issue("sensor-001","ST-5 · Challenge before expiry"),proof=await proofFor("sensor-001",s,true),started=performance.now();await waitForExpiry(started+s.expires_in*1000+1500,expiryController.signal);const elapsed=(performance.now()-started)/1000,v=await auth("sensor-001",s,proof),ok=rejected(v);event("ST-5 · Expired proof","Expected HTTP 401 after waiting beyond the advertised TTL.",{...v,waited_seconds:Number(elapsed.toFixed(3)),ttl_seconds:s.expires_in},ok);updateTest("st5",ok?"pass":"fail",`Waited ${elapsed.toFixed(1)} seconds; received HTTP ${v.response.status}.`);message(ok?"ST-5 passed: the expired proof was rejected. Check the ST-7 card for separate TLS evidence.":"ST-5 failed: the expired proof did not receive the expected rejection.",ok?"ok":"error");}catch(e){const cancelled=e.name==="AbortError";updateTest("st5",cancelled?"incomplete":"fail",cancelled?"Cancelled before verification; no expiry result claimed.":e.message);message(cancelled?"Expiry cancelled. The unused session expires naturally; no PASS recorded.":`Expiry could not complete: ${e.message}`,cancelled?"":"error");}finally{expiryController=null;$("cancel").hidden=true;$("countdown").textContent="";setBusy(false);}});
+$("cancel").addEventListener("click",()=>expiryController?.abort());
+$("clear").addEventListener("click",()=>{if(busy)return;records=[];$("trace").replaceChildren();$("event-count").textContent="(0 records)";testIds.forEach(id=>updateTest(id,"not-run","Evidence cleared; run this test to record a result."));updateTest("st7","manual","No external TLS evidence imported.");$("tls-evidence").value="";$("tls-import-note").textContent="External TLS evidence cleared.";$("export").disabled=true;message("Evidence and test results cleared.");});
+$("export").addEventListener("click",()=>{const data={exported_at:new Date().toISOString(),report:"Secure Authentication for IoT Devices CCA Report",origin:location.origin,server_metadata:serverInfo,tests,records,limitations:["Public classroom keys; not production security evidence.","ST-7 imported CLI evidence is external and not independently attested.","Observations of this server are not formal security verification."]},url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:"application/json"})),link=document.createElement("a");link.href=url;link.download="iot-authentication-evidence.json";link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
+$("tls-evidence").addEventListener("change", async () => {
+  const file = $("tls-evidence").files[0];
+  if (!file || busy) return;
+  runId = "tls-import-" + new Date().toISOString();
+  updateTest("st7", "manual", "New file selected; external result has not been validated.");
+  try {
+    if (file.size > 100000) throw new Error("Choose a verifier JSON file under 100 KB.");
+    const evidence = JSON.parse(await file.text());
+    const source = new URL(evidence.server);
+    if (evidence.schema !== "INS-IOT-TLS-CHECK-v1" || source.protocol !== "https:"
+        || !Number.isFinite(Date.parse(evidence.recorded_at))
+        || typeof evidence.trusted_authentication !== "boolean"
+        || typeof evidence.untrusted_certificate_rejected !== "boolean") {
+      throw new Error("Not a recognized TLS verifier result.");
     }
-
-    function event(title, description, details, passed) {
-      const item = document.createElement("article");
-      item.className = `event ${passed ? "pass" : "fail"}`;
-      const heading = document.createElement("h3");
-      heading.textContent = `${passed ? "PASS" : "FAIL"} · ${title}`;
-      const summary = document.createElement("p");
-      summary.textContent = description;
-      const payload = document.createElement("pre");
-      payload.textContent = typeof details === "string" ? details : JSON.stringify(details, null, 2);
-      item.append(heading, summary, payload);
-      trace.append(item);
+    if (source.hostname !== location.hostname) {
+      throw new Error("TLS result hostname differs from this dashboard. Open it on the tested hostname.");
     }
-
-    async function sign(deviceId, session) {
-      const encoded = session.challenge.replace(/-/g, "+").replace(/_/g, "/");
-      const challenge = Uint8Array.from(atob(encoded), char => char.charCodeAt(0));
-      const context = encoder.encode(`INS-IOT-AUTH-v1|${deviceId}|${session.session_id}|`);
-      const message = new Uint8Array(context.length + challenge.length);
-      message.set(context);
-      message.set(challenge, context.length);
-      const key = await crypto.subtle.importKey("raw", fromHex(demoKeys[deviceId]), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
-      return toHex(await crypto.subtle.sign("HMAC", key, message));
-    }
-
-    function setBusy(busy) { buttons.forEach(button => button.disabled = busy); }
-    function startRun() { trace.replaceChildren(); result.className = "result"; }
-
-    document.getElementById("run").addEventListener("click", async () => {
-      const deviceId = document.getElementById("device").value;
-      setBusy(true); startRun();
-      result.className = "result";
-      result.textContent = "Requesting a fresh challenge…";
-      try {
-        const issued = await post("/challenge", { device_id: deviceId });
-        if (issued.status !== 200) throw new Error(JSON.stringify(issued.data));
-        event("Fresh challenge issued", `POST /challenge · HTTP ${issued.status}`, { device_id: deviceId, session_id: issued.data.session_id, challenge_base64url: issued.data.challenge, expires_in_seconds: issued.data.expires_in }, true);
-        const proof = await sign(deviceId, issued.data);
-        event("Device proof computed", "HMAC-SHA-256 over the protocol label, device ID, session ID, and challenge.", { algorithm: "HMAC-SHA-256", proof_hex: proof }, true);
-        const verified = await post("/authenticate", { device_id: deviceId, session_id: issued.data.session_id, proof });
-        event("Server verification", `POST /authenticate · HTTP ${verified.status}`, verified.data, verified.status === 200 && verified.data.authenticated === true);
-        if (verified.status !== 200) throw new Error(JSON.stringify(verified.data));
-        result.className = "result ok";
-        result.textContent = `Server accepted the proof for ${verified.data.device_id}. The transcript above shows the challenge, proof, and response.`;
-      } catch (error) {
-        result.className = "result error";
-        result.textContent = `Authentication failed: ${error.message}`;
-      } finally {
-        setBusy(false);
-      }
-    });
-
-    document.getElementById("walkthrough").addEventListener("click", async () => {
-      const deviceId = document.getElementById("device").value;
-      setBusy(true); startRun();
-      result.textContent = "Running valid authentication and three negative security checks…";
-      try {
-        const issued = await post("/challenge", { device_id: deviceId });
-        if (issued.status !== 200) throw new Error(`Challenge request failed: ${JSON.stringify(issued.data)}`);
-        event("Fresh challenge issued", `POST /challenge · HTTP ${issued.status}`, { device_id: deviceId, session_id: issued.data.session_id, challenge_base64url: issued.data.challenge, expires_in_seconds: issued.data.expires_in }, true);
-        const proof = await sign(deviceId, issued.data);
-        event("Device proof computed", "The browser signs the fresh session context using the public classroom key.", { algorithm: "HMAC-SHA-256", proof_hex: proof }, true);
-        const valid = await post("/authenticate", { device_id: deviceId, session_id: issued.data.session_id, proof });
-        const accepted = valid.status === 200 && valid.data.authenticated === true;
-        event("Valid authentication", `Expected HTTP 200 · received HTTP ${valid.status}`, valid.data, accepted);
-
-        const replay = await post("/authenticate", { device_id: deviceId, session_id: issued.data.session_id, proof });
-        const replayBlocked = replay.status === 401;
-        event("Replay attempt", `Expected HTTP 401 after the session was consumed · received HTTP ${replay.status}`, replay.data, replayBlocked);
-
-        const tamperSession = await post("/challenge", { device_id: deviceId });
-        let tamperedBlocked = false;
-        if (tamperSession.status === 200) {
-          const goodProof = await sign(deviceId, tamperSession.data);
-          const tamperedProof = (goodProof[0] === "0" ? "1" : "0") + goodProof.slice(1);
-          const tampered = await post("/authenticate", { device_id: deviceId, session_id: tamperSession.data.session_id, proof: tamperedProof });
-          tamperedBlocked = tampered.status === 401;
-          event("Tampered-proof attempt", `Changed one hex digit of the HMAC · expected HTTP 401 · received HTTP ${tampered.status}`, tampered.data, tamperedBlocked);
-        } else {
-          event("Tampered-proof attempt", `Could not obtain a fresh challenge · HTTP ${tamperSession.status}`, tamperSession.data, false);
-        }
-
-        const unknown = await post("/challenge", { device_id: "unregistered-device" });
-        const unknownBlocked = unknown.status === 401;
-        event("Unknown-device attempt", `Expected HTTP 401 · received HTTP ${unknown.status}`, unknown.data, unknownBlocked);
-
-        const allPassed = accepted && replayBlocked && tamperedBlocked && unknownBlocked;
-        result.className = `result ${allPassed ? "ok" : "error"}`;
-        result.textContent = allPassed
-          ? "Walkthrough passed: valid proof accepted; replay, tampered proof, and unregistered device rejected by this running server."
-          : "One or more checks did not match the expected response. Review the server results above.";
-      } catch (error) {
-        result.className = "result error";
-        result.textContent = `Walkthrough could not complete: ${error.message}`;
-      } finally {
-        setBusy(false);
-      }
-    });
-  </script>
+    const ok = evidence.trusted_authentication && evidence.untrusted_certificate_rejected;
+    updateTest("st7", ok ? "external" : "fail",
+      `Imported CLI result for ${source.origin}, recorded ${evidence.recorded_at}. External, not independently attested.`);
+    event("ST-7 · Imported CLI observation",
+      "External file for the tested HTTPS origin; not browser-generated or independently attested.",
+      { external_evidence: evidence }, ok);
+    $("tls-import-note").textContent = ok
+      ? "External PASS recorded with origin and timestamp. Included in evidence downloads."
+      : "Verifier reported failure. Review its errors in protocol evidence.";
+  } catch (error) {
+    $("tls-import-note").textContent = "Import rejected: " + error.message;
+  }
+});
+async function connect(){try{const response=await fetch("/demo/info",{cache:"no-store",signal:AbortSignal.timeout(10000)});if(!response.ok)throw new Error(`Metadata returned HTTP ${response.status}; restart the updated server.py.`);serverInfo=await response.json();if(!Array.isArray(serverInfo.device_ids))throw new Error("Invalid server metadata.");const choices=Object.keys(demoKeys).filter(id=>serverInfo.device_ids.includes(id));$("device").replaceChildren(...choices.map(id=>{const o=document.createElement("option");o.value=id;o.textContent=id;return o;}));$("registry-note").textContent=`Server registry IDs: ${serverInfo.device_ids.join(", ")||"none"}. Browser supports only the two public fixtures; custom keys are never fetched.`;const tls=serverInfo.transport==="https"&&location.protocol==="https:";$("connection").textContent=tls?"HTTPS observed":"HTTP · local only";const description=tls?`Negotiated ${serverInfo.tls_version||"TLS"} on the metadata request. Certificate validation is a separate check.`:"No transport encryption. Use loopback for the classroom demonstration.";$("transport-summary").textContent=description;$("tls-observation").textContent="Current connection: "+description;available=choices.includes("sensor-001")&&choices.includes("sensor-002")&&!!globalThis.crypto?.subtle&&serverInfo.challenge_bits===256&&serverInfo.expires_in===60&&serverInfo.algorithm==="HMAC-SHA-256"&&serverInfo.context==="INS-IOT-AUTH-v1";if(!available)throw new Error("Requires both sample identities, matching protocol settings, and Web Crypto. Restore the supplied registry and use localhost or verified HTTPS.");message("Ready. Authenticate the selected device or run the report's quick walkthrough.");}catch(e){available=false;$("connection").textContent="Unavailable";$("transport-summary").textContent=e.message;$("tls-observation").textContent="Transport not verified: "+e.message;message(`Could not connect: ${e.message} Reload after correcting the connection or server.`,"error");}finally{setBusy(false);}}
+connect();
+</script>
 </body>
 </html>

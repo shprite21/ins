@@ -5,3 +5,6 @@ venv/
 .env
 .idea/
 .vscode/
+*.pem
+*.key
+test-results/

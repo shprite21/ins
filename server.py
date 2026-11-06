@@ -79,7 +79,7 @@ def make_handler(state: AuthState):
                     return None
                 value = json.loads(self.rfile.read(length))
                 return value if isinstance(value, dict) else None
-            except (ValueError, json.JSONDecodeError):
+            except (ValueError, UnicodeDecodeError):
                 return None
 
         def do_GET(self) -> None:
@@ -96,6 +96,33 @@ def make_handler(state: AuthState):
                 return
             if route == "/health":
                 self.send_json(200, {"status": "ok", "service": "INS-IoT-Auth-Demo"})
+                return
+            if route == "/demo/info":
+                # Public metadata only; registry keys must never be returned here.
+                tls = isinstance(self.connection, ssl.SSLSocket)
+                self.send_json(200, {
+                    "device_ids": sorted(state.devices),
+                    "challenge_bits": 256,
+                    "expires_in": CHALLENGE_TTL_SECONDS,
+                    "algorithm": "HMAC-SHA-256",
+                    "context": AUTH_CONTEXT.decode("ascii"),
+                    "transport": "https" if tls else "http",
+                    "tls_version": self.connection.version() if tls else None,
+                    "demo_only": True,
+                })
+                return
+            if route == "/report":
+                report = Path(__file__).parent / "report" / "Secure_Authentication_for_IoT_Devices_CCA_Report.pdf"
+                if not report.is_file():
+                    self.send_json(404, {"error": "report_not_found"})
+                    return
+                body = report.read_bytes()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/pdf")
+                self.send_header("Content-Length", str(len(body)))
+                self.send_header("Cache-Control", "no-store")
+                self.end_headers()
+                self.wfile.write(body)
                 return
             self.send_json(404, {"error": "not_found"})
 
